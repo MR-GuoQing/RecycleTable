@@ -14,11 +14,10 @@ import android.view.ViewGroup;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 public class RecycleTable extends ViewGroup {
 
-    private final int minimumVelocity;
-    private final int maximumVelocity;
     private RecycleTableAdpter mAdapter;
 
     private int mRow;
@@ -42,15 +41,11 @@ public class RecycleTable extends ViewGroup {
     private int width;
     private int height;
 
-    private int scrollX;
-    private int scrollY;
+    private int scrollOffsetX;
+    private int scrollOffsetY;
 
     private int ex;
     private int ey;
-
-    VelocityTracker velocityTracker;
-
-
 
 
     public RecycleTable(Context context) {
@@ -72,12 +67,10 @@ public class RecycleTable extends ViewGroup {
 
         firstColunm = 0;
         firstRow = 0;
-        scrollX = 0;
-        scrollY = 0;
+        scrollOffsetX = 0;
+        scrollOffsetY = 0;
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         touchSlop = configuration.getScaledTouchSlop();
-        minimumVelocity = configuration.getScaledMinimumFlingVelocity();
-        maximumVelocity = configuration.getScaledMaximumFlingVelocity();
     }
 
     @Override
@@ -94,8 +87,8 @@ public class RecycleTable extends ViewGroup {
                 int moveY = (int) ev.getRawY();
                 int diffX = Math.abs(moveX - ex);
                 int diffY = Math.abs(moveY - ey);
-                Log.e("onInterceptTouchEvent", "moveX is " + moveX + "moveY is" + moveY);
                 if (diffX > touchSlop || diffY > touchSlop) {
+
                     isIntercept = true;
                 }
 
@@ -109,14 +102,14 @@ public class RecycleTable extends ViewGroup {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-//        if(velocityTracker == null){
-//            velocityTracker = VelocityTracker.obtain();
-//        }
-//        velocityTracker.addMovement(event);
+
         switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
                 ex = (int) event.getRawX();
                 ey = (int) event.getRawY();
+                if(ex > widths[0] || ey > heights[0]){
+                    return false;
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
                 final int moveX = (int) event.getRawX();
@@ -125,7 +118,6 @@ public class RecycleTable extends ViewGroup {
                 final int diffY = ey - moveY;
                 ex = moveX;
                 ey = moveY;
-                Log.e("onTouchEvent","x is "+diffX+"y is "+ diffY);
                 scrollBy(diffX,diffY);
                 break;
             case MotionEvent.ACTION_UP:
@@ -149,7 +141,7 @@ public class RecycleTable extends ViewGroup {
             mColunm = mAdapter.getColunmCounts();
             widths = new int[mColunm+1];
             heights = new int[mRow+1];
-            //define the row and column title index equal -1, to distinguish with the content table
+            //row and column title index equal -1, to distinguish with the content table index
             for (int i = -1; i < mColunm; i++) {
                 widths[i+1] = mAdapter.getColunmWidth(i);
             }
@@ -245,11 +237,13 @@ public class RecycleTable extends ViewGroup {
         }
         View view = mAdapter.getView(row,column,convertView,this);
         view.measure(MeasureSpec.makeMeasureSpec(width,MeasureSpec.EXACTLY),MeasureSpec.makeMeasureSpec(height,MeasureSpec.EXACTLY));
-        view.setTag(R.id.tag_type_view,viewType);
+        view.setTag(R.id.tag_view,viewType);
         view.setTag(R.id.tag_row,row);
         view.setTag(R.id.tag_column,column);
         addView(view);
-        Log.e("View",view.hashCode()+"");
+        if(BuildConfig.DEBUG){
+            Log.e("View",view.hashCode()+"");
+        }
         return  view;
     }
 
@@ -257,30 +251,30 @@ public class RecycleTable extends ViewGroup {
     @Override
     public void removeView(View view) {
         super.removeView(view);
-        int viewType = (int)view.getTag(R.id.tag_type_view);
+        int viewType = (int)view.getTag(R.id.tag_view);
         recyclerPool.put(view,viewType);
 
     }
 
     @Override
     public void scrollBy(int x, int y) {
-        scrollX += x;
-        scrollY += y;
+        scrollOffsetX += x;
+        scrollOffsetY += y;
 
         if(needRelayout)
             return;
-        //
-        scrollBounds();
+        //according to the firstRow and firstColumn index to recompute the scrollOffset
+        computeScrollOffset();
 
-        if(scrollX == 0){
+        if(scrollOffsetX == 0){
 
-        }else if(scrollX > 0){//scroll from right to left
-            while(widths[firstColunm+1] < scrollX){
+        }else if(scrollOffsetX > 0){//scroll from right to left
+            while(widths[firstColunm+1] < scrollOffsetX){
                 if(!rowTitleLists.isEmpty()){
                     //remove left
                     removeColumn(0);
                 }
-                scrollX -= widths[firstColunm+1];
+                scrollOffsetX -= widths[firstColunm+1];
                 firstColunm++;
             }
             while(getFilledWidth() < width){
@@ -294,23 +288,23 @@ public class RecycleTable extends ViewGroup {
                 //remove right
                 removeColumn(rowTitleLists.size()-1);
             }
-            while(scrollX < 0){
+            while(scrollOffsetX < 0){
                 //add left
                 addColumn(firstColunm-1,0);
                 firstColunm--;
-                scrollX += widths[firstColunm + 1];
+                scrollOffsetX += widths[firstColunm + 1];
 
             }
         }
 
-        if(scrollY == 0){
+        if(scrollOffsetY == 0){
 
-        }else if(scrollY > 0){//scroll from bottom to up
-            while(heights[firstRow+1] < scrollY){
+        }else if(scrollOffsetY > 0){//scroll from bottom to up
+            while(heights[firstRow+1] < scrollOffsetY){
                 if(!rowTitleLists.isEmpty()){
                     removeRow(0);
                 }
-                scrollY -= heights[firstRow+1];
+                scrollOffsetY -= heights[firstRow+1];
                 firstRow++;
             }
 
@@ -322,24 +316,24 @@ public class RecycleTable extends ViewGroup {
             while(!colunmTitleLists.isEmpty() && getFilledHeight()-heights[firstRow + colunmTitleLists.size()]>height){
                 removeRow(colunmTitleLists.size() - 1);
             }
-            while(scrollY <0){
+            while(scrollOffsetY <0){
                 addRow(firstRow-1,0);
                 firstRow--;
-                scrollY += heights[firstRow + 1];
+                scrollOffsetY += heights[firstRow + 1];
             }
         }
 
-        repositionView();
+        reLayoutView();
     }
 
-    private void scrollBounds() {
-        scrollX = scrollBounds(scrollX, firstColunm, widths, width);
-        scrollY = scrollBounds(scrollY, firstRow, heights, height);
+    private void computeScrollOffset() {
+        scrollOffsetX = computeScrollOffset(scrollOffsetX, firstColunm, widths, width);
+        scrollOffsetY = computeScrollOffset(scrollOffsetY, firstRow, heights, height);
     }
 
-    private int scrollBounds(int desiredScroll, int firstCell, int sizes[], int viewSize) {
+    private int computeScrollOffset(int desiredScroll, int firstCell, int sizes[], int viewSize) {
         if (desiredScroll == 0) {
-            // no op
+            //no offset
         } else if (desiredScroll < 0) {
             desiredScroll = Math.max(desiredScroll, -sum(sizes, 1, firstCell));
         } else {
@@ -348,9 +342,9 @@ public class RecycleTable extends ViewGroup {
         return desiredScroll;
     }
 
-    private void repositionView() {
+    private void reLayoutView() {
         int left , top, right, bottom,i;
-        left = widths[0] - scrollX;
+        left = widths[0] - scrollOffsetX;
         int j = firstColunm;
         for(View view : rowTitleLists){
             right = left + widths[++j];
@@ -358,18 +352,18 @@ public class RecycleTable extends ViewGroup {
             left = right;
         }
         i = firstRow;
-        top = heights[0] - scrollY;
+        top = heights[0] - scrollOffsetY;
         for (View view : colunmTitleLists) {
             bottom = top + heights[++i];
             view.layout(0,top,widths[0],bottom);
             top = bottom;
         }
-        top = heights[0] - scrollY;
+        top = heights[0] - scrollOffsetY;
         i = firstRow;
         for (List<View> tableViewList : tableViewLists) {
             bottom = top + heights[++i];
             j = firstColunm;
-            left = widths[0] - scrollX;
+            left = widths[0] - scrollOffsetX;
             for (View view : tableViewList) {
                 right = left + widths[++j];
                 view.layout(left,top,right,bottom);
@@ -395,7 +389,7 @@ public class RecycleTable extends ViewGroup {
     }
 
     private int getFilledHeight() {
-        return heights[0] + sum(heights,firstRow + 1,colunmTitleLists.size()) - scrollY;
+        return heights[0] + sum(heights,firstRow + 1,colunmTitleLists.size()) - scrollOffsetY;
     }
 
     private void removeRow(int pos) {
@@ -420,7 +414,7 @@ public class RecycleTable extends ViewGroup {
     }
 
     private int getFilledWidth() {
-        return  widths[0] + sum(widths,firstColunm + 1,rowTitleLists.size()) - scrollX;
+        return  widths[0] + sum(widths,firstColunm + 1,rowTitleLists.size()) - scrollOffsetX;
     }
 
     private void removeColumn(int position) {
@@ -468,8 +462,8 @@ public class RecycleTable extends ViewGroup {
         firstRow = 0;
         firstColunm = 0;
         needRelayout = true;
-        scrollX = 0;
-        scrollY = 0;
+        scrollOffsetX = 0;
+        scrollOffsetY = 0;
         requestLayout();
     }
 
@@ -584,4 +578,30 @@ public class RecycleTable extends ViewGroup {
 
        }
    }
+
+   class RecyclePool {
+
+        private Stack<View>[] poolViews;
+        private int mSize;
+
+        public RecyclePool(int length) {
+            mSize = length;
+            poolViews = new Stack[length];
+            for(int i = 0; i<length; i++) {
+                poolViews[i] = new Stack<>();
+            }
+        }
+
+        public void put(View view, int type){
+            poolViews[type].push(view);
+        }
+
+        public View get(int type){
+            if(poolViews[type].size()<=0){
+                return null;
+            }
+            return poolViews[type].pop();
+        }
+    }
+
 }
