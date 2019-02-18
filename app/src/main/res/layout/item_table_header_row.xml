@@ -11,6 +11,7 @@
         android:background="@drawable/bg_header_row"
         android:gravity="center_vertical|left"
         android:paddingLeft="10dip"
+        android:clickable="true"
         />
 
 

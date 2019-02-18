@@ -47,6 +47,8 @@ public class RecycleTable extends ViewGroup {
     private int ex;
     private int ey;
 
+    private int mStatusBarHeight;
+
 
     public RecycleTable(Context context) {
         this(context,null);
@@ -71,6 +73,14 @@ public class RecycleTable extends ViewGroup {
         scrollOffsetY = 0;
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         touchSlop = configuration.getScaledTouchSlop();
+
+        mStatusBarHeight = -1;
+        //获取status_bar_height资源的ID
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            //根据资源ID获取响应的尺寸值
+            mStatusBarHeight = getResources().getDimensionPixelSize(resourceId);
+        }
     }
 
     @Override
@@ -87,11 +97,12 @@ public class RecycleTable extends ViewGroup {
                 int moveY = (int) ev.getRawY();
                 int diffX = Math.abs(moveX - ex);
                 int diffY = Math.abs(moveY - ey);
-                if (diffX > touchSlop || diffY > touchSlop) {
+                if(ex > widths[0] && ey - mStatusBarHeight > heights[0]) {
+                    if (diffX > touchSlop || diffY > touchSlop) {
 
-                    isIntercept = true;
+                        isIntercept = true;
+                    }
                 }
-
 
                 break;
             }
@@ -107,9 +118,6 @@ public class RecycleTable extends ViewGroup {
             case MotionEvent.ACTION_DOWN:
                 ex = (int) event.getRawX();
                 ey = (int) event.getRawY();
-                if(ex > widths[0] || ey > heights[0]){
-                    return false;
-                }
                 break;
             case MotionEvent.ACTION_MOVE:
                 final int moveX = (int) event.getRawX();
@@ -241,9 +249,9 @@ public class RecycleTable extends ViewGroup {
         view.setTag(R.id.tag_row,row);
         view.setTag(R.id.tag_column,column);
         addView(view);
-        if(BuildConfig.DEBUG){
-            Log.e("View",view.hashCode()+"");
-        }
+//        if(BuildConfig.DEBUG){
+//            Log.e("View",view.hashCode()+"");
+//        }
         return  view;
     }
 
@@ -381,7 +389,6 @@ public class RecycleTable extends ViewGroup {
         ArrayList<View> list = new ArrayList<>();
         int size = firstColunm + rowTitleLists.size();
         for(int i = firstColunm;i < size;i++){
-            Log.e("Tag","the add row is "+row+"the column is "+i);
             View view1 = obtainView(row,i,widths[i+1],heights[row+1]);
             list.add(view1);
         }
@@ -490,9 +497,9 @@ public class RecycleTable extends ViewGroup {
         return sum(array, 0, array.length);
     }
 
-    private int sum(int array[], int start, int end) {
+    private int sum(int array[], int start, int count) {
         int sum = 0;
-        end += start;
+        int end = start + count;
         for (int i = start; i < end; i++) {
             sum += array[i];
         }
