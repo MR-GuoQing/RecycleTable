@@ -646,6 +646,7 @@ public class RecycleTable extends ViewGroup {
         if(row >=0&&column>=0&&row <= rowTitleLists.size()-1 && column <= colunmTitleLists.size()-1){
             firstRow = row;
             firstColunm = column;
+            needRelayout = true;
             requestLayout();
         }
 

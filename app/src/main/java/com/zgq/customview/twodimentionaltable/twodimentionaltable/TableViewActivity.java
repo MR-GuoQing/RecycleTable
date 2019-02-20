@@ -5,11 +5,13 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.widget.AppCompatSeekBar;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,7 +31,7 @@ import java.util.List;
 public class TableViewActivity extends Activity {
 
     private RecycleTable mTable;
-    private List<String> mDateLists;
+    private List<DateTime> mDateLists;
 
     private DateTime startTime;
     private DateTime endTime;
@@ -65,6 +67,10 @@ public class TableViewActivity extends Activity {
         ll = findViewById(R.id.ll_container);
         mTable = findViewById(R.id.recycletable);
        final TextView txtProces = findViewById(R.id.txt_process);
+       TextView startTime = findViewById(R.id.txt_startTime);
+        TextView endTime = findViewById(R.id.txt_endTime);
+        final DateTimeFormatter format = DateTimeFormat.forPattern("MM/dd HH:mm");
+
        txtProces.setText(1+" min");
         ll.setOnTouchListener(new DoubleClickLinstenner(new DoubleClickLinstenner.DoubleClickCallback() {
             @Override
@@ -98,12 +104,36 @@ public class TableViewActivity extends Activity {
 
         seekBar.setMax(72*24*60);
         initDate(1);
-
-        tex.setText(mDateLists.get(mTable.getFirstColunm()));
+        startTime.setText(mDateLists.get(0).toString(format));
+        endTime.setText(mDateLists.get(mDateLists.size()-1).toString(format));
+        final DateTimeFormatter format1 = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm");
+        tex.setText(mDateLists.get(mTable.getFirstColunm()).toString(format1));
         mTable.setOnScrollListener(new RecycleTable.OnScrollListener() {
             @Override
             public void onScrollStateChanged(int oldRow, int oldColumn, int latestRow, int latestColumn) {
-                tex.setText(mDateLists.get(latestColumn));
+                tex.setText(mDateLists.get(latestColumn).toString(format1));
+            }
+        });
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            int process = 0;
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                if(i%mProgress == 0){
+                    process = i;
+                    Log.e("Tag",i+"");
+                }
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                mTable.setRowAndColumn(mTable.getFirstRow(),process/mProgress);
+//                tex.setText(mDateLists.get(process/mProgress).toString(format1));
             }
         });
         mTable.setmAdapter(mAdapter);
@@ -114,39 +144,34 @@ public class TableViewActivity extends Activity {
     private void initDate(int type) {
         startTime = new DateTime(new Date());
         endTime = startTime.plusDays(3);
-        DateTimeFormatter format = DateTimeFormat.forPattern("yy/MM/dd HH:mm");
+        DateTimeFormatter format = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm");
         Period period = new Period(startTime,endTime,PeriodType.minutes());
         int minutes = period.getMinutes();
         mDateLists = new ArrayList<>();
         switch (type){
             case 1:
                 for(int i = 1;i<= minutes; i+=1){
-                    mDateLists.add(startTime.plusMinutes(i).toString(format));
-
+                    mDateLists.add(startTime.plusMinutes(i));
                 }
                 break;
             case 5:
                 for(int i = 5;i<= minutes; i+=5){
-                    mDateLists.add(startTime.plusMinutes(i).toString(format));
-
+                    mDateLists.add(startTime.plusMinutes(i));
                 }
                 break;
             case 10:
                 for(int i = 10;i<= minutes; i+=10){
-                    mDateLists.add(startTime.plusMinutes(i).toString(format));
-
+                    mDateLists.add(startTime.plusMinutes(i));
                 }
                 break;
             case 30:
                 for(int i = 30;i<= minutes; i+=30){
-                    mDateLists.add(startTime.plusMinutes(i).toString(format));
-
+                    mDateLists.add(startTime.plusMinutes(i));
                 }
                 break;
             case 60:
                 for(int i = 60;i<= minutes; i+=60){
-                    mDateLists.add(startTime.plusMinutes(i).toString(format));
-
+                    mDateLists.add(startTime.plusMinutes(i));
                 }
                 break;
             default:
@@ -203,7 +228,8 @@ public class  TableAdapter extends RecycleTableAdpter{
                     convertView = getLayoutInflater().inflate(R.layout.item_table_header_column,parent,false);
                 }
                 TextView text1 = convertView.findViewById(R.id.text_column);
-                text1.setText(mDateLists.get(colunm));
+                DateTimeFormatter format = DateTimeFormat.forPattern("yy/MM/dd HH:mm");
+                text1.setText(mDateLists.get(colunm).toString(format));
                 text1.setTextColor(Color.WHITE);
 
 
