@@ -1,6 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.zgq.customview.twodimentionaltable.twodimentionaltable.RecycleTable xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/recycletable"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ll_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.05"
+        android:gravity="center"
+        android:background="#000000"
+        >
+        <TextView
+            android:id="@+id/txt_time"
+           android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2019/02/08 17:00"
+            android:layout_alignParentLeft="true"
+            android:textColor="#FFFFFF"/>
+        <TextView android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/orange"
+            android:layout_alignParentRight="true"
+            android:text="Demo Patient1"
+            />
+
+    </RelativeLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.85">
+
+        <com.zgq.customview.twodimentionaltable.twodimentionaltable.RecycleTable
+            android:id="@+id/recycletable"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+
+
+    <android.support.v7.widget.AppCompatSeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.05"
+        android:background="#000000"
+        android:maxHeight="2dp"
+        android:minHeight="2dp"
+        android:thumb="@drawable/seekbar"
+        android:progressDrawable="@drawable/bg_seekbar"
+        android:splitTrack="false"
+        android:paddingStart="10dp"
+        android:paddingEnd="5dp"/>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.05"
+        android:layout_gravity="center"
+        android:background="#000000"
+        >
+        <TextView
+            android:id="@+id/txt_startTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="02/08 17:00"
+            android:layout_alignParentLeft="true"
+            android:textColor="#FFFFFF"/>
+        <TextView
+            android:id="@+id/txt_process"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="10 min"
+            android:textColor="#FFFFFF"/>
+        <TextView android:layout_width="wrap_content"
+            android:id="@+id/txt_endTime"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:layout_alignParentRight="true"
+            android:text="02/20 20:00"
+            />
+
+    </RelativeLayout>
+</LinearLayout>
+
 

@@ -34,6 +34,7 @@ public class RecycleTable extends ViewGroup {
     private List<View> rowTitleLists;
     private List<List<View>> tableViewLists;
 
+
     private int firstRow;
     private int firstColunm;
 
@@ -48,7 +49,13 @@ public class RecycleTable extends ViewGroup {
     private int ey;
 
     private int mStatusBarHeight;
+    private RecyCleTableDataSetObsever recyCleTableDataSetObsever;
 
+    private OnScrollListener mOnScrollListener;
+
+    public void setOnScrollListener(OnScrollListener l) {
+        this.mOnScrollListener = l;
+    }
 
     public RecycleTable(Context context) {
         this(context,null);
@@ -110,6 +117,7 @@ public class RecycleTable extends ViewGroup {
         }
         return isIntercept;
     }
+
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -191,6 +199,7 @@ public class RecycleTable extends ViewGroup {
                 int width = r-l;
                 int height = b-t;
                 int left, top, right, bottom;
+                computeScrollOffset();
                 headView = createView(-1,-1,0,0,widths[0],heights[0]);
                 left = widths[0];
                 for(int i = firstColunm;i < mColunm && left < width;i++){
@@ -268,7 +277,8 @@ public class RecycleTable extends ViewGroup {
     public void scrollBy(int x, int y) {
         scrollOffsetX += x;
         scrollOffsetY += y;
-
+        int oldRow = firstRow;
+        int oldColumn = firstColunm;
         if(needRelayout)
             return;
         //according to the firstRow and firstColumn index to recompute the scrollOffset
@@ -290,6 +300,7 @@ public class RecycleTable extends ViewGroup {
                 int rowSize = rowTitleLists.size();
                 addColumn(rowSize+firstColunm,rowTitleLists.size());
             }
+
 
         }else {//scroll from left to right
             while((!rowTitleLists.isEmpty() && getFilledWidth() - widths[firstColunm+rowTitleLists.size()] > width)){
@@ -330,9 +341,13 @@ public class RecycleTable extends ViewGroup {
                 scrollOffsetY += heights[firstRow + 1];
             }
         }
+        if(oldColumn != firstColunm || oldRow != firstRow){
+            mOnScrollListener.onScrollStateChanged(oldRow,oldColumn,firstRow,firstColunm);
 
+        }
         reLayoutView();
     }
+
 
     private void computeScrollOffset() {
         scrollOffsetX = computeScrollOffset(scrollOffsetX, firstColunm, widths, width);
@@ -464,7 +479,12 @@ public class RecycleTable extends ViewGroup {
      * @param mAdapter
      */
     public void setmAdapter(RecycleTableAdpter mAdapter) {
+        if(this.mAdapter != null){
+            this.mAdapter.unRegisterDataSetObserver(recyCleTableDataSetObsever);
+        }
         this.mAdapter = mAdapter;
+        recyCleTableDataSetObsever = new RecyCleTableDataSetObsever();
+        this.mAdapter.registerDataSetObserver(recyCleTableDataSetObsever);
         recyclerPool = new RecyclePool(mAdapter.getViewTypeCounts());
         firstRow = 0;
         firstColunm = 0;
@@ -478,12 +498,12 @@ public class RecycleTable extends ViewGroup {
         /**
          *
          */
-        void registerDataSetObserver(RecyCleTableDataSetObsever obsever);
+        void registerDataSetObserver(DataSetObserver obsever);
 
         /**
          *
          */
-        void unRegisterDataSetObserver(RecyCleTableDataSetObsever obsever);
+        void unRegisterDataSetObserver(DataSetObserver obsever);
 
         /**
          *
@@ -510,13 +530,13 @@ public class RecycleTable extends ViewGroup {
         final DataSetObservable mObsever = new DataSetObservable();
 
         @Override
-        public void unRegisterDataSetObserver(RecyCleTableDataSetObsever obsever) {
+        public void unRegisterDataSetObserver(DataSetObserver obsever) {
             mObsever.unregisterObserver(obsever);
 
         }
 
         @Override
-        public void registerDataSetObserver(RecyCleTableDataSetObsever obsever) {
+        public void registerDataSetObserver(DataSetObserver obsever) {
             mObsever.registerObserver(obsever);
         }
 
@@ -610,5 +630,26 @@ public class RecycleTable extends ViewGroup {
             return poolViews[type].pop();
         }
     }
+
+    public interface OnScrollListener{
+        public void onScrollStateChanged(int oldRow,int oldColumn,int latestRow,int latestColumn);
+    }
+
+    public int getFirstRow() {
+        return firstRow;
+    }
+
+    public int getFirstColunm() {
+        return firstColunm;
+    }
+    public void setRowAndColumn(int row,int column){
+        if(row >=0&&column>=0&&row <= rowTitleLists.size()-1 && column <= colunmTitleLists.size()-1){
+            firstRow = row;
+            firstColunm = column;
+            requestLayout();
+        }
+
+    }
+
 
 }
