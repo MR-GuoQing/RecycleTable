@@ -199,27 +199,31 @@ public class RecycleTable extends ViewGroup {
                 int width = r-l;
                 int height = b-t;
                 int left, top, right, bottom;
+                Log.e("Tag","first: "+firstRow + " "+ firstColunm+" "+scrollOffsetX+" "+scrollOffsetY);
                 computeScrollOffset();
+                Log.e("Tag","second: "+firstRow + " "+ firstColunm+" "+scrollOffsetX+" "+scrollOffsetY);
+                reComputeFirstCell();
+                Log.e("Tag","third: "+firstRow + " "+ firstColunm+" "+scrollOffsetX+" "+scrollOffsetY);
                 headView = createView(-1,-1,0,0,widths[0],heights[0]);
-                left = widths[0];
+                left = widths[0] - scrollOffsetX;
                 for(int i = firstColunm;i < mColunm && left < width;i++){
                     right = left + widths[i+1];
                     View view = createView(-1,i,left,0,right,heights[0]);
                     rowTitleLists.add(view);
                     left = right;
                 }
-                top = heights[0];
+                top = heights[0] - scrollOffsetY;
                 for(int j = firstRow;j < mRow && top < height;j++){
                     bottom = top+heights[j+1];
                     View view = createView(j,-1,0,top,widths[0],bottom);
                     colunmTitleLists.add(view);
                     top = bottom;
                 }
-                top = heights[0];
+                top = heights[0] - scrollOffsetY;
                 for(int i = firstRow; i < mRow && top < height;i++){
                     ArrayList<View> views = new ArrayList<>();
                     bottom = top + heights[i];
-                    left = widths[0];
+                    left = widths[0] - scrollOffsetX;
                     for(int j = firstColunm;j < mColunm && left < width;j++){
                         right = left + widths[j];
                         View view = createView(i,j,left,top,right,bottom);
@@ -238,6 +242,34 @@ public class RecycleTable extends ViewGroup {
 
     }
 
+    private void reComputeFirstCell() {
+        int values[];
+
+        values = reComputeFirstCell(scrollOffsetX, firstColunm, widths);
+        scrollOffsetX = values[0];
+        firstColunm = values[1];
+
+        values = reComputeFirstCell(scrollOffsetY, firstRow, heights);
+        scrollOffsetY = values[0];
+        firstRow = values[1];
+    }
+    private int[] reComputeFirstCell(int offset,int index, int array[]){
+        if (offset == 0) {
+            // no op
+        } else if (offset > 0) {
+            while (array[index + 1] < offset) {
+                index++;
+                offset -= array[index];
+            }
+        } else {
+            while (offset < 0) {
+                offset += array[index];
+                index--;
+            }
+        }
+        return new int[] { offset, index };
+
+    }
     private View createView(int row, int colunm,int left,int top,int right,int bottom) {
         int width = right - left;
         int height = bottom - top;
@@ -643,14 +675,24 @@ public class RecycleTable extends ViewGroup {
         return firstColunm;
     }
     public void setRowAndColumn(int row,int column){
-        if(row >=0&&column>=0&&row <= rowTitleLists.size()-1 && column <= colunmTitleLists.size()-1){
+
+//        Log.e("Tag","scrollX: "+scrollOffsetX+"scrollY: "+scrollOffsetY);
+
+//        while(sum(widths,column  ,widths.length - column) + widths[0] <= width){
+//            scrollOffsetX = sum(widths,column  ,widths.length - column) + widths[0] - width;
+//            column--;
+//        }
+//        while(sum(heights,row ,heights.length - row ) + heights[0] <= height){
+//           scrollOffsetY = sum(heights,row ,heights.length - row) + heights[0] - height;
+//            row--;
+//        }
             firstRow = row;
             firstColunm = column;
             needRelayout = true;
             requestLayout();
         }
 
-    }
+
 
 
 }

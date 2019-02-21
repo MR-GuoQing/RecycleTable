@@ -96,13 +96,12 @@ public class TableViewActivity extends Activity {
                             break;
                 }
                 initDate(mProgress);
-                seekBar.setProgress(mProgress);
                 txtProces.setText(mProgress+" min");
                 mAdapter.notifyDataSetChanged();
             }
         }));
-
-        seekBar.setMax(72*24*60);
+        seekBar.setMin(1);
+        seekBar.setMax(72*60);
         initDate(1);
         startTime.setText(mDateLists.get(0).toString(format));
         endTime.setText(mDateLists.get(mDateLists.size()-1).toString(format));
@@ -120,7 +119,7 @@ public class TableViewActivity extends Activity {
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                 if(i%mProgress == 0){
                     process = i;
-                    Log.e("Tag",i+"");
+//                    Log.e("Tag",i+"");
                 }
 
             }
@@ -132,8 +131,8 @@ public class TableViewActivity extends Activity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                mTable.setRowAndColumn(mTable.getFirstRow(),process/mProgress);
-//                tex.setText(mDateLists.get(process/mProgress).toString(format1));
+                mTable.setRowAndColumn(mTable.getFirstRow(),process/mProgress-1);
+                tex.setText(mDateLists.get(process/mProgress-1).toString(format1));
             }
         });
         mTable.setmAdapter(mAdapter);
