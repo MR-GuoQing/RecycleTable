@@ -686,13 +686,13 @@ public class RecycleTable extends ViewGroup {
         if(needAdjust(column,widths,width)){
             while(needAdjust(column,widths,width)){
                 scrollOffsetX = sum(widths,column  ,widths.length - column) + widths[0] - width;
-                column--;
+                --column;
             }
         }
         if(needAdjust(row,heights,height)){
             while(needAdjust(row,heights,height)){
                 scrollOffsetY = sum(heights,row ,heights.length - row) + heights[0] - height;
-                row--;
+                --row;
             }
         }
 
@@ -702,7 +702,7 @@ public class RecycleTable extends ViewGroup {
         }
 
     private boolean needAdjust(int index,int[] arry,int length) {
-        return sum(arry,index  ,arry.length - index) + widths[0] <= length;
+        return sum(arry,index  ,arry.length - index-1) + widths[0] <= length;
     }
 
 
