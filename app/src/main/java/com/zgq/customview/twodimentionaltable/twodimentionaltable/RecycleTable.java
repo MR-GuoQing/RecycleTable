@@ -96,7 +96,7 @@ public class RecycleTable extends ViewGroup {
         switch (ev.getAction()){
             case MotionEvent.ACTION_DOWN: {
                 ex = (int) ev.getRawX();
-                ey = (int) ev.getRawY();
+                ey = (int) ev.getY();
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
@@ -104,7 +104,7 @@ public class RecycleTable extends ViewGroup {
                 int moveY = (int) ev.getRawY();
                 int diffX = Math.abs(moveX - ex);
                 int diffY = Math.abs(moveY - ey);
-                if(ex > widths[0] && ey - mStatusBarHeight > heights[0]) {
+                if(ex > widths[0] && ey  > heights[0]) {
                     if (diffX > touchSlop || diffY > touchSlop) {
 
                         isIntercept = true;
@@ -153,17 +153,7 @@ public class RecycleTable extends ViewGroup {
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         height = MeasureSpec.getSize(heightMeasureSpec);
         if (mAdapter != null) {
-            mRow = mAdapter.getRowCounts();
-            mColunm = mAdapter.getColunmCounts();
-            widths = new int[mColunm+1];
-            heights = new int[mRow+1];
-            //row and column title index equal -1, to distinguish with the content table index
-            for (int i = -1; i < mColunm; i++) {
-                widths[i+1] = mAdapter.getColunmWidth(i);
-            }
-            for (int j = -1; j < mRow; j++) {
-                heights[j+1] = mAdapter.getRowHeight(j);
-            }
+            initWidthsAndHeights();
             if (widthMode == MeasureSpec.AT_MOST) {
                 cellsWidth += Math.min(width, sum(widths));
             } else if (widthMode == MeasureSpec.EXACTLY) {
@@ -184,6 +174,20 @@ public class RecycleTable extends ViewGroup {
 
         }
 
+    }
+
+    private void initWidthsAndHeights() {
+        mRow = mAdapter.getRowCounts();
+        mColunm = mAdapter.getColunmCounts();
+        widths = new int[mColunm+1];
+        heights = new int[mRow+1];
+        //row and column title index equal -1, to distinguish with the content table index
+        for (int i = -1; i < mColunm; i++) {
+            widths[i+1] = mAdapter.getColunmWidth(i);
+        }
+        for (int j = -1; j < mRow; j++) {
+            heights[j+1] = mAdapter.getRowHeight(j);
+        }
     }
 
     @Override
@@ -675,24 +679,31 @@ public class RecycleTable extends ViewGroup {
         return firstColunm;
     }
     public void setRowAndColumn(int row,int column){
-
-//        Log.e("Tag","scrollX: "+scrollOffsetX+"scrollY: "+scrollOffsetY);
-
-//        while(sum(widths,column  ,widths.length - column) + widths[0] <= width){
-//            scrollOffsetX = sum(widths,column  ,widths.length - column) + widths[0] - width;
-//            column--;
-//        }
-//        while(sum(heights,row ,heights.length - row ) + heights[0] <= height){
-//           scrollOffsetY = sum(heights,row ,heights.length - row) + heights[0] - height;
-//            row--;
-//        }
-            firstRow = row;
-            firstColunm = column;
-            needRelayout = true;
-            requestLayout();
+        //when the dataset changed, need recompute the widths and heights
+        initWidthsAndHeights();
+        scrollOffsetX = 0;
+        scrollOffsetY = 0;
+        if(needAdjust(column,widths,width)){
+            while(needAdjust(column,widths,width)){
+                scrollOffsetX = sum(widths,column  ,widths.length - column) + widths[0] - width;
+                column--;
+            }
+        }
+        if(needAdjust(row,heights,height)){
+            while(needAdjust(row,heights,height)){
+                scrollOffsetY = sum(heights,row ,heights.length - row) + heights[0] - height;
+                row--;
+            }
         }
 
+            firstRow = row;
+            firstColunm = column;
+            mAdapter.notifyDataSetChanged();
+        }
 
+    private boolean needAdjust(int index,int[] arry,int length) {
+        return sum(arry,index  ,arry.length - index) + widths[0] <= length;
+    }
 
 
 }

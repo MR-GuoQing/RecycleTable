@@ -31,7 +31,7 @@ import java.util.List;
 public class TableViewActivity extends Activity {
 
     private RecycleTable mTable;
-    private List<DateTime> mDateLists;
+    private ArrayList<DateTime> mDateLists;
 
     private DateTime startTime;
     private DateTime endTime;
@@ -39,6 +39,14 @@ public class TableViewActivity extends Activity {
     private LinearLayout ll;
     private TableAdapter mAdapter;
     private int mProgress = 1;
+    private int currentRow = 0;
+    private int currentColumn = 0;
+    private DateTime currentTime;
+    private TextView tex;
+    private DateTimeFormatter format;
+    private DateTimeFormatter format1;
+    private TextView txtProces;
+    private TextView txtStartTime;
 
     private String rowTitles[] = {"HR","VPC/M","ST(I)","ST(II","ST(III",
                                   "ST(aVR)","ST(aVL)","ST(aVF)","ST(V1)","ST(V2)",
@@ -61,17 +69,48 @@ public class TableViewActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.recycletable);
-        mAdapter = new TableAdapter();
-        final TextView tex = findViewById(R.id.txt_time);
-        seekBar = findViewById(R.id.seekBar);
-        ll = findViewById(R.id.ll_container);
-        mTable = findViewById(R.id.recycletable);
-       final TextView txtProces = findViewById(R.id.txt_process);
-       TextView startTime = findViewById(R.id.txt_startTime);
-        TextView endTime = findViewById(R.id.txt_endTime);
-        final DateTimeFormatter format = DateTimeFormat.forPattern("MM/dd HH:mm");
+        initData();
+        initView();
+        initAdapter();
+        initLisenter();
+    }
 
-       txtProces.setText(1+" min");
+    private void initLisenter() {
+
+        mTable.setOnScrollListener(new RecycleTable.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(int oldRow, int oldColumn, int latestRow, int latestColumn) {
+                tex.setText(mDateLists.get(latestColumn).toString(format1));
+                Log.e("tag",latestRow*mProgress+"");
+                seekBar.setProgress(latestColumn);
+                currentTime = mDateLists.get(latestColumn);
+
+            }
+        });
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            int process = -1;
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                Log.e("Tag","i:"+i+"");
+                process = i;
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+                    mTable.setRowAndColumn(mTable.getFirstRow(),process);
+                    tex.setText(mDateLists.get(mTable.getFirstColunm()).toString(format1));
+                    currentTime = mDateLists.get(process);
+                    Log.e("Tag","stop:process:"+process);
+
+            }
+        });
         ll.setOnTouchListener(new DoubleClickLinstenner(new DoubleClickLinstenner.DoubleClickCallback() {
             @Override
             public void onDoubleClick() {
@@ -92,84 +131,114 @@ public class TableViewActivity extends Activity {
                         mProgress = 1;
                         break;
                     default:
-                            mProgress = 1;
-                            break;
+                        mProgress = 1;
+                        break;
                 }
-                initDate(mProgress);
+
+                initDate(mProgress,startTime);
+                mAdapter.setDateTimeArrayList(mDateLists);
+                int index = 0;
+                for(int i = 0;i<mDateLists.size();i++){
+                    Period period = new Period(mDateLists.get(i),currentTime,PeriodType.minutes());
+                    int diff = period.getMinutes();
+                    if(mProgress == 1){
+                       index = 0;
+                        break;
+
+                    }else {
+                        if(diff == 0){
+                            index = i;
+                            break;
+                        }else if(diff > 0 && diff <= mProgress){
+                            index = i;
+                            continue;
+                        }else if(diff > 0 && diff > mProgress){
+                            continue;
+                        }else {
+                            break;
+                        }
+                    }
+
+                }
+//                int afterColumn = mDateLists.
+                seekBar.setMax(mDateLists.size()-1);
                 txtProces.setText(mProgress+" min");
-                mAdapter.notifyDataSetChanged();
+
+                seekBar.setProgress(index);
+                Log.e("Index","column is :"+index);
+                mTable.setRowAndColumn(currentRow,index);
+                tex.setText(mDateLists.get(mTable.getFirstColunm()).toString(format1));
+                currentTime = mDateLists.get(mTable.getFirstColunm());
             }
         }));
-        seekBar.setMin(1);
-        seekBar.setMax(72*60);
-        initDate(1);
-        startTime.setText(mDateLists.get(0).toString(format));
-        endTime.setText(mDateLists.get(mDateLists.size()-1).toString(format));
-        final DateTimeFormatter format1 = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm");
-        tex.setText(mDateLists.get(mTable.getFirstColunm()).toString(format1));
-        mTable.setOnScrollListener(new RecycleTable.OnScrollListener() {
-            @Override
-            public void onScrollStateChanged(int oldRow, int oldColumn, int latestRow, int latestColumn) {
-                tex.setText(mDateLists.get(latestColumn).toString(format1));
-            }
-        });
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            int process = 0;
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                if(i%mProgress == 0){
-                    process = i;
-//                    Log.e("Tag",i+"");
-                }
+    }
 
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                mTable.setRowAndColumn(mTable.getFirstRow(),process/mProgress-1);
-                tex.setText(mDateLists.get(process/mProgress-1).toString(format1));
-            }
-        });
+    private void initAdapter() {
+        mAdapter = new TableAdapter(mDateLists);
         mTable.setmAdapter(mAdapter);
-
 
     }
 
-    private void initDate(int type) {
+    private void initView() {
+        tex = findViewById(R.id.txt_time);
+        seekBar = findViewById(R.id.seekBar);
+        ll = findViewById(R.id.ll_container);
+        mTable = findViewById(R.id.recycletable);
+
+        txtProces = findViewById(R.id.txt_process);
+        txtStartTime = findViewById(R.id.txt_startTime);
+        TextView endTime = findViewById(R.id.txt_endTime);
+        format = DateTimeFormat.forPattern("MM/dd HH:mm");
+        txtProces.setText(1+" min");
+        currentRow = mTable.getFirstRow();
+        currentColumn = mTable.getFirstColunm();
+
+        seekBar.setMin(0);
+        seekBar.setMax(mDateLists.size()-1);
+
+        txtStartTime.setText(mDateLists.get(0).toString(format));
+        endTime.setText(mDateLists.get(mDateLists.size()-1).toString(format));
+        format1 = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm");
+        tex.setText(mDateLists.get(mTable.getFirstColunm()).toString(format1));
+    }
+
+    private void initData() {
         startTime = new DateTime(new Date());
-        endTime = startTime.plusDays(3);
-        DateTimeFormatter format = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm");
+        initDate(1,startTime);
+        currentTime = mDateLists.get(currentColumn);
+    }
+
+    private void initDate(int type,DateTime startTime) {
+
+        endTime = startTime.plusDays(1);
+        format = DateTimeFormat.forPattern("yyyy/MM/dd HH:mm");
         Period period = new Period(startTime,endTime,PeriodType.minutes());
         int minutes = period.getMinutes();
+        mDateLists = null;
         mDateLists = new ArrayList<>();
         switch (type){
             case 1:
-                for(int i = 1;i<= minutes; i+=1){
+                for(int i = 0;i< minutes; i+=1){
                     mDateLists.add(startTime.plusMinutes(i));
                 }
                 break;
             case 5:
-                for(int i = 5;i<= minutes; i+=5){
+                for(int i = 0;i< minutes; i+=5){
                     mDateLists.add(startTime.plusMinutes(i));
                 }
                 break;
             case 10:
-                for(int i = 10;i<= minutes; i+=10){
+                for(int i = 0;i< minutes; i+=10){
                     mDateLists.add(startTime.plusMinutes(i));
                 }
                 break;
             case 30:
-                for(int i = 30;i<= minutes; i+=30){
+                for(int i = 0;i< minutes; i+=30){
                     mDateLists.add(startTime.plusMinutes(i));
                 }
                 break;
             case 60:
-                for(int i = 60;i<= minutes; i+=60){
+                for(int i = 0;i< minutes; i+=60){
                     mDateLists.add(startTime.plusMinutes(i));
                 }
                 break;
@@ -190,6 +259,16 @@ public class TableViewActivity extends Activity {
 
     }
 public class  TableAdapter extends RecycleTableAdpter{
+    public void setDateTimeArrayList(ArrayList<DateTime> dateTimeArrayList) {
+        this.dateTimeArrayList = dateTimeArrayList;
+    }
+
+    private ArrayList<DateTime> dateTimeArrayList;
+
+    public TableAdapter(ArrayList<DateTime> list) {
+        dateTimeArrayList = list;
+    }
+
     @Override
     public int getRowCounts() {
         return rowTitles.length;
@@ -197,17 +276,17 @@ public class  TableAdapter extends RecycleTableAdpter{
 
     @Override
     public int getColunmCounts() {
-        return mDateLists.size();
+        return dateTimeArrayList.size();
     }
 
     @Override
     public int getRowHeight(int row) {
-        return 100;
+        return 150;
     }
 
     @Override
     public int getColunmWidth(int colunm) {
-        return 210;
+        return 250;
     }
 
     @Override
