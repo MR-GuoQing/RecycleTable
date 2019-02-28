@@ -1,4 +1,4 @@
-package com.zgq.customview.twodimentionaltable.twodimentionaltable;
+package com.zgq.recycletable;
 
 import android.view.MotionEvent;
 import android.view.View;

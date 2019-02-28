@@ -1,4 +1,4 @@
-package com.zgq.customview.twodimentionaltable.twodimentionaltable;
+package com.zgq.recycletable;
 
 import org.junit.Test;
 

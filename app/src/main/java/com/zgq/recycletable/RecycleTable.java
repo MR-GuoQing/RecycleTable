@@ -1,4 +1,4 @@
-package com.zgq.customview.twodimentionaltable.twodimentionaltable;
+package com.zgq.recycletable;
 
 import android.content.Context;
 import android.database.DataSetObservable;

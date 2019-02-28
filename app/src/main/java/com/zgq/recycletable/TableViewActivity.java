@@ -1,4 +1,4 @@
-package com.zgq.customview.twodimentionaltable.twodimentionaltable;
+package com.zgq.recycletable;
 
 import android.app.Activity;
 import android.graphics.Color;
@@ -15,7 +15,8 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.zgq.customview.twodimentionaltable.twodimentionaltable.RecycleTable.RecycleTableAdpter;
+
+import com.zgq.recycletable.RecycleTable;
 
 import org.joda.time.DateTime;
 import org.joda.time.Period;
@@ -166,7 +167,7 @@ public class TableViewActivity extends Activity {
 
                 seekBar.setProgress(index);
                 Log.e("Index","column is :"+index);
-                mTable.setRowAndColumn(currentRow,index);
+                mTable.setRowAndColumn(mTable.getFirstRow(),index);
                 tex.setText(mDateLists.get(mTable.getFirstColunm()).toString(format1));
                 currentTime = mDateLists.get(mTable.getFirstColunm());
             }
@@ -258,7 +259,7 @@ public class TableViewActivity extends Activity {
         return rowTitles[row];
 
     }
-public class  TableAdapter extends RecycleTableAdpter{
+public class  TableAdapter extends RecycleTable.RecycleTableAdpter {
     public void setDateTimeArrayList(ArrayList<DateTime> dateTimeArrayList) {
         this.dateTimeArrayList = dateTimeArrayList;
     }
